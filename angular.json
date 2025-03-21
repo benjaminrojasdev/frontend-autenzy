@@ -36,10 +36,7 @@
             ],
             "scripts": [],
             "server": "src/main.server.ts",
-            "prerender": true,
-            "ssr": {
-              "entry": "src/server.ts"
-            }
+            "prerender": false
           },
           "configurations": {
             "production": {
@@ -72,7 +69,8 @@
               "buildTarget": "autenzyfront:build:production"
             },
             "development": {
-              "buildTarget": "autenzyfront:build:development"
+              "buildTarget": "autenzyfront:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
@@ -103,5 +101,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

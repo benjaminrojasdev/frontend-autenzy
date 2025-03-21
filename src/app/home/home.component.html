@@ -1,0 +1,26 @@
+<div class="hero">
+  <div class="overlay"></div>
+  <div class="content">
+      <div class="logo-container">
+          <img src="/autenzy-icon.png" alt="Logo Autenzy" class="logo" />
+      </div>
+
+      <div class="text-container">
+          <p class="welcome-title">
+            BIENVENIDO A <strong>AUTENZY</strong>
+          </p>
+          <p class="welcome-text">
+            Actualmente, nuestro sitio está en <strong>construcción</strong>, pero puedes acceder a una apartado con información sobre las marcas y modelos de vehículos vendidos en Chile.
+          </p>
+      </div>
+
+      <div class="button-container">
+          <p-button [loading]="loading" (onClick)="load()" >
+              <ng-template pTemplate="icon">
+                  <img src="/car-icon2.png" alt="Car Icon" class="custom-icon" />
+              </ng-template>
+              REVISAR MODELOS
+          </p-button>
+      </div>
+  </div>
+</div>
