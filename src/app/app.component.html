@@ -1,3 +1,9 @@
-<router-outlet>
-    
-</router-outlet>
+<body>
+    <div class="app-wrapper">
+      <app-header *ngIf="mostrarHeader"></app-header>
+      <main class="router-wrapper">
+        <router-outlet></router-outlet>
+      </main>
+      <app-footer *ngIf="mostrarFooter"></app-footer>
+    </div>
+  </body>

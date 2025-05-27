@@ -1,4 +1,4 @@
-@use "sass:color"; // Para ajustes de colores
+@use "sass:color";
 
 .hero {
   position: relative;
@@ -27,7 +27,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px; 
+    gap: 20px;
 
     .logo-container {
       display: flex;
@@ -37,57 +37,59 @@
     }
 
     .logo {
-      width: 200px; 
+      width: 200px;
     }
 
     .text-container {
-      max-width: 900px; 
+      max-width: 900px;
       text-align: center;
       font-size: 1.1rem;
-      line-height: 1.5;
+      line-height: 1.6;
       font-weight: 400;
       color: #f1f1f1;
       padding: 0 20px;
 
       strong {
-        color: #00B894; 
+        color: #00B894;
       }
     }
 
     .welcome-title {
-        font-size: 2rem; 
-        font-weight: bold;
+      font-size: 2rem;
+      font-weight: bold;
     }
 
-    .button-container {
+    .button-group {
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
+      gap: 1rem;
       width: 100%;
-    }
 
-    ::ng-deep .p-button {
-      background-color: #00B894 !important;
-      border: none !important;
-      font-weight: 500 !important;
-      padding: 10px 24px !important;
-      font-size: 1rem !important;
-      border-radius: 8px !important;
-      transition: background 0.3s ease, transform 0.2s ease;
-      color: white !important;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px; 
-      width: fit-content !important; 
+      ::ng-deep .p-button {
+        background-color: #00B894 !important;
+        border: none !important;
+        color: white !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        padding: 10px 24px !important;
+        border-radius: 8px !important;
+        transition: background 0.3s ease, transform 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: fit-content !important;
 
-      &:hover {
-        background-color: color.adjust(#00B894, $lightness: -10%) !important;
-        transform: scale(1.05);
-      }
+        &:hover {
+          background-color: color.adjust(#00B894, $lightness: -10%) !important;
+          transform: scale(1.05);
+        }
 
-      .custom-icon {
-        width: 28px !important; 
-        height: auto !important;
-        filter: invert(1) brightness(10) !important; 
+        .custom-icon {
+          width: 28px !important;
+          height: auto !important;
+          filter: invert(1) brightness(10) !important;
+        }
       }
     }
   }

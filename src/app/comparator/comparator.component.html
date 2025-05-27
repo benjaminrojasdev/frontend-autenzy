@@ -1,0 +1,453 @@
+
+<div class="comparador-wrapper">
+<app-header></app-header>
+
+<div class="comparador-header">
+  <h1>Comparador de Autos</h1>
+  <p>
+    Compara las características técnicas de dos vehículos y encuentra el que mejor se adapta a tus necesidades. 
+    Revisa datos como potencia, torque, aceleración, consumo de combustible, dimensiones, tipo de motor y más. <strong>¡Selecciona dos modelos y descubre cuál es el ideal para ti!</strong>
+  </p>
+</div>
+
+<!-- CONTENEDOR PRINCIPAL: A - VS - B -->
+<div class="vs-container">
+
+  <!-- COLUMNA A -->
+  <div class="auto-column">
+    <h4 class="title-a">Auto A</h4>
+    <div class="dropdown-row">
+      <div class="dropdown-pair">
+        <p-dropdown
+          [options]="brandsA"
+          [(ngModel)]="selectedBrandA"
+          optionLabel="name"
+          [disabled]="loadingIA"
+          placeholder="Marca (ejemplo Mazda)"
+          [filter]="true"
+          filterPlaceholder="Marca"
+          (onChange)="onBrandChangeA()"
+        >
+  <ng-template let-item pTemplate="item">
+    <div class="item-content">
+      <span>{{ item.name }}</span>
+      <img
+      [src]="'https://flagcdn.com/24x18/' + getCountryCode(item.country) + '.png'"
+        width="24"
+        height="18"
+        alt="{{ item.origin }}"
+      />
+    </div>
+  </ng-template>
+
+  <ng-template let-item pTemplate="selectedItem">
+    <div class="item-content">
+      <span *ngIf="item">{{ item.name }}</span>
+      <img
+        *ngIf="item"
+        [src]="'https://flagcdn.com/24x18/' + getCountryCode(item.country) + '.png'"
+        width="24"
+        height="18"
+        alt="{{ item.origin }}"
+      />
+      <span *ngIf="!item">Selecciona una marca</span>
+    </div>
+  </ng-template>
+</p-dropdown>
+        <p-dropdown [options]="modelsA" [(ngModel)]="selectedModelA" [disabled]="loadingIA" optionLabel="name" placeholder="Modelo" [filter]="true" filterPlaceholder="Modelo"(onChange)="onModelChangeA()" [disabled]="!selectedBrandA" [loading]="loadingModelsA"></p-dropdown>
+      </div>
+      <div class="dropdown-pair">
+        <p-dropdown [options]="detailsA" [(ngModel)]="selectedDetailA" [disabled]="loadingIA" optionLabel="label" placeholder="Año (rango)" [filter]="true" filterPlaceholder="Año" (onChange)="onDetailChangeA()" [disabled]="!selectedModelA" [loading]="loadingDetailsA"></p-dropdown>
+        <p-dropdown [options]="versionsA" [(ngModel)]="selectedVersionA" [disabled]="loadingIA" optionLabel="name" placeholder="Versión" [filter]="true" filterPlaceholder="Versión" [disabled]="!selectedDetailA" (onChange)="compararCategoria()" [loading]="loadingVersionsA"></p-dropdown>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <ng-container *ngIf="selectedDetailA?.image; else placeholderA">
+        <img [src]="selectedDetailA.image" alt="Auto A" (error)="onImageError($event)" />
+      </ng-container>
+      
+      <ng-template #placeholderA>
+        <img src="/comparador1.webp" alt="Placeholder Auto A" class="placeholder-image" />
+      </ng-template>
+      <h3>{{ selectedBrandA?.name }} {{ selectedModelA?.name }}</h3>
+      <p class="origin" *ngIf="selectedDetailA?.origin">
+        <span>{{ selectedDetailA.origin }}</span>
+        <img
+          [src]="'https://flagcdn.com/24x18/' + getCountryCode(selectedDetailA.origin) + '.png'"
+          width="18"
+          height="14"
+          alt="{{ selectedDetailA.origin }}"
+        />
+      </p>
+      <div class="info" *ngIf="selectedVersionA">
+        <p *ngIf="esCampoPrincipal('engine') || isExpandedA">
+          <strong>Motor:</strong> {{ selectedVersionA.engine }}
+        </p>
+        <p *ngIf="esCampoPrincipal('transmission') || isExpandedA">
+          <strong>Transmisión:</strong> {{ selectedVersionA.transmission }}
+        </p>
+        <p *ngIf="esCampoPrincipal('drivertrain') || isExpandedA">
+          <strong>Tracción:</strong>
+          {{ selectedVersionA.drivertrain }}
+          <img *ngIf="getResultadoComparacion('drivertrain') === 'A'" src="/dicto.webp" alt="Ganador">
+          <img *ngIf="getResultadoComparacion('drivertrain') === 'B'" src="/x.webp" alt="Perdedor">
+          <img *ngIf="getResultadoComparacion('drivertrain') === 'empate'" src="/igual.webp" alt="Empate">
+        </p>
+        <p *ngIf="esCampoPrincipal('power') || isExpandedA">
+          <strong>Caballos de fuerza:</strong> {{ selectedVersionA.power }} HP
+          <img *ngIf="getResultadoComparacion('power') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('power') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('power') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('torque') || isExpandedA">
+          <strong>Torque:</strong> {{ selectedVersionA.torque }} NM
+          <img *ngIf="getResultadoComparacion('torque') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('torque') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('torque') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('acceleration') || isExpandedA">
+          <strong>0-100 Km/h:</strong> {{ selectedVersionA.acceleration }} Segundos
+          <img *ngIf="getResultadoComparacion('acceleration') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('acceleration') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('acceleration') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('wheels') || isExpandedA">
+          <strong>Llantas:</strong> {{ selectedVersionA.wheels }} Pulgadas
+          <img *ngIf="getResultadoComparacion('wheels') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('wheels') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('wheels') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('lenght') || isExpandedA">
+          <strong>Dimensiones:</strong> {{ selectedVersionA.lenght }} / {{ selectedVersionA.width }} / {{ selectedVersionA.height }} MM
+          <img *ngIf="getResultadoComparacion('lenght') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('lenght') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('lenght') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('consumption') || isExpandedA">
+          <strong>Consumo:</strong> {{ selectedVersionA.consumption }} Km por litro
+          <img *ngIf="getResultadoComparacion('consumption') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('consumption') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('consumption') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('weight') || isExpandedA">
+          <strong>Peso:</strong> {{ selectedVersionA.weight }} Kg
+          <img *ngIf="getResultadoComparacion('weight') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('weight') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('weight') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('displacement') || isExpandedA">
+          <strong>Cilindrada:</strong> {{ selectedVersionA.displacement }}
+          <img *ngIf="getResultadoComparacion('displacement') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('displacement') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('displacement') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="isExpandedA">
+          <strong>Cilindros:</strong> {{ selectedVersionA.cylinderConfiguration }}
+        </p>
+        <p *ngIf="isExpandedA">
+          <strong>Inducción:</strong> {{ selectedVersionA.induction }}
+        </p>
+        <p *ngIf="esCampoPrincipal('trunk_capacity') || isExpandedA">
+          <strong>Maletero:</strong> {{ selectedVersionA.trunk_capacity }} Litros
+          <img *ngIf="getResultadoComparacion('trunk_capacity') === 'A'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('trunk_capacity') === 'B'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('trunk_capacity') === 'empate'" src="/igual.webp" />
+        </p>
+      
+        <!-- Preview del siguiente campo si no está expandido -->
+        <p *ngIf="!isExpandedA && siguienteCampoA" class="extra-preview">
+          <strong>{{ getCampoLabel(siguienteCampoA) }}:</strong>
+          {{ selectedVersionA[siguienteCampoA] }}
+        </p>
+      
+        <!-- Botón Ver más / menos -->
+        <button *ngIf="!isExpandedA" (click)="isExpandedA = true" class="ver-mas-btn">
+          <i class="pi pi-chevron-down"></i>
+        </button>
+        <button *ngIf="isExpandedA" (click)="isExpandedA = false" class="ver-mas-btn">
+          <i class="pi pi-chevron-up"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="vs-letter" *ngIf="selectedVersionA && selectedVersionB">
+    <div class="categoria-contenedor">
+      <img [src]="getCategoriaIcon()" class="categoria-icon" />
+      <span>Seleccione una categoria</span>
+      <p-dropdown 
+        [options]="categorias" 
+        [(ngModel)]="categoriaSeleccionada" 
+        [disabled]="loadingIA"
+        placeholder="Categoría"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="compararCategoria()"
+        class="categoria-dropdown">
+      </p-dropdown>
+    </div>
+  </div>
+
+  <!-- COLUMNA B -->
+  <div class="auto-column">
+    <h4 class="title-b">Auto B</h4>
+    <div class="dropdown-row">
+      <div class="dropdown-pair">
+        <p-dropdown
+          [options]="brandsB"
+          [(ngModel)]="selectedBrandB"
+          [disabled]="loadingIA"
+          optionLabel="name"
+          placeholder="Marca (ejemplo Mazda)"
+          [filter]="true"
+          filterPlaceholder="Marca"
+          (onChange)="onBrandChangeB()"
+        >
+  <ng-template let-item pTemplate="item">
+    <div class="item-content">
+      <span>{{ item.name }}</span>
+      <img
+      [src]="'https://flagcdn.com/24x18/' + getCountryCode(item.country) + '.png'"
+        width="24"
+        height="18"
+        alt="{{ item.origin }}"
+      />
+    </div>
+  </ng-template>
+
+  <ng-template let-item pTemplate="selectedItem">
+    <div class="item-content">
+      <span *ngIf="item">{{ item.name }}</span>
+      <img
+        *ngIf="item"
+        [src]="'https://flagcdn.com/24x18/' + getCountryCode(item.country) + '.png'"
+        width="24"
+        height="18"
+        alt="{{ item.origin }}"
+      />
+      <span *ngIf="!item">Selecciona una marca</span>
+    </div>
+  </ng-template>
+</p-dropdown>
+        <p-dropdown [options]="modelsB" [(ngModel)]="selectedModelB" [disabled]="loadingIA" optionLabel="name" placeholder="Modelo" [filter]="true" filterPlaceholder="Modelo" (onChange)="onModelChangeB()" [disabled]="!selectedBrandB" [loading]="loadingModelsB"></p-dropdown>
+      </div>
+      <div class="dropdown-pair">
+        <p-dropdown [options]="detailsB" [(ngModel)]="selectedDetailB" [disabled]="loadingIA" optionLabel="label" placeholder="Año (rango)" [filter]="true" filterPlaceholder="Año" (onChange)="onDetailChangeB()" [disabled]="!selectedModelB" [loading]="loadingDetailsB"></p-dropdown>
+        <p-dropdown [options]="versionsB" [(ngModel)]="selectedVersionB" [disabled]="loadingIA" optionLabel="name" placeholder="Versión"  [filter]="true" filterPlaceholder="Versión" [disabled]="!selectedDetailB" (onChange)="compararCategoria()" [loading]="loadingVersionsB"></p-dropdown>
+      </div>
+    </div>
+
+    <div class="car-card">
+      <ng-container *ngIf="selectedDetailB?.image; else placeholderB">
+        <img [src]="selectedDetailB.image" alt="Auto B" (error)="onImageError($event)" />
+      </ng-container>
+      
+      <ng-template #placeholderB>
+        <img src="/comparador2.webp" alt="Placeholder Auto B" class="placeholder-image" />
+      </ng-template>
+      <h3>{{ selectedBrandB?.name }} {{ selectedModelB?.name }}</h3>
+      <p class="origin" *ngIf="selectedDetailB?.origin">
+        <span>{{ selectedDetailB.origin }}</span>
+        <img
+          [src]="'https://flagcdn.com/24x18/' + getCountryCode(selectedDetailB.origin) + '.png'"
+          width="18"
+          height="14"
+          alt="{{ selectedDetailB.origin }}"
+        />
+      </p>
+      <div class="info" *ngIf="selectedVersionB">
+        <p *ngIf="esCampoPrincipal('engine') || isExpandedB">
+          <strong>Motor:</strong> {{ selectedVersionB.engine }}
+        </p>
+        <p *ngIf="esCampoPrincipal('transmission') || isExpandedB">
+          <strong>Transmisión:</strong> {{ selectedVersionB.transmission }}
+        </p>
+        <p *ngIf="esCampoPrincipal('drivertrain') || isExpandedB">
+          <strong>Tracción:</strong>
+          {{ selectedVersionB.drivertrain }}
+          <img *ngIf="getResultadoComparacion('drivertrain') === 'B'" src="/dicto.webp" alt="Ganador">
+          <img *ngIf="getResultadoComparacion('drivertrain') === 'A'" src="/x.webp" alt="Perdedor">
+          <img *ngIf="getResultadoComparacion('drivertrain') === 'empate'" src="/igual.webp" alt="Empate">
+        </p>
+        <p *ngIf="esCampoPrincipal('power') || isExpandedB">
+          <strong>Caballos de fuerza:</strong> {{ selectedVersionB.power }} HP
+          <img *ngIf="getResultadoComparacion('power') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('power') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('power') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('torque') || isExpandedB">
+          <strong>Torque:</strong> {{ selectedVersionB.torque }} NM
+          <img *ngIf="getResultadoComparacion('torque') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('torque') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('torque') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('acceleration') || isExpandedB">
+          <strong>0-100 Km/h:</strong> {{ selectedVersionB.acceleration }} Segundos
+          <img *ngIf="getResultadoComparacion('acceleration') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('acceleration') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('acceleration') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('wheels') || isExpandedB">
+          <strong>Llantas:</strong> {{ selectedVersionB.wheels }} Pulgadas
+          <img *ngIf="getResultadoComparacion('wheels') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('wheels') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('wheels') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('lenght') || isExpandedB">
+          <strong>Dimensiones:</strong> {{ selectedVersionB.lenght }} / {{ selectedVersionB.width }} / {{ selectedVersionB.height }} MM
+          <img *ngIf="getResultadoComparacion('lenght') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('lenght') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('lenght') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('consumption') || isExpandedB">
+          <strong>Consumo:</strong> {{ selectedVersionB.consumption }} Km por litro
+          <img *ngIf="getResultadoComparacion('consumption') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('consumption') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('consumption') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('weight') || isExpandedB">
+          <strong>Peso:</strong> {{ selectedVersionB.weight }} Kg
+          <img *ngIf="getResultadoComparacion('weight') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('weight') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('weight') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="esCampoPrincipal('displacement') || isExpandedB">
+          <strong>Cilindrada:</strong> {{ selectedVersionB.displacement }}
+          <img *ngIf="getResultadoComparacion('displacement') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('displacement') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('displacement') === 'empate'" src="/igual.webp" />
+        </p>
+        <p *ngIf="isExpandedB">
+          <strong>Cilindros:</strong> {{ selectedVersionB.cylinderConfiguration }}
+        </p>
+        <p *ngIf="isExpandedB">
+          <strong>Inducción:</strong> {{ selectedVersionB.induction }}
+        </p>
+        <p *ngIf="esCampoPrincipal('trunk_capacity') || isExpandedB">
+          <strong>Maletero:</strong> {{ selectedVersionB.trunk_capacity }} Litros
+          <img *ngIf="getResultadoComparacion('trunk_capacity') === 'B'" src="/dicto.webp" />
+          <img *ngIf="getResultadoComparacion('trunk_capacity') === 'A'" src="/x.webp" />
+          <img *ngIf="getResultadoComparacion('trunk_capacity') === 'empate'" src="/igual.webp" />
+        </p>
+      
+        <!-- Preview si no está expandido -->
+        <p *ngIf="!isExpandedB && siguienteCampoB" class="extra-preview">
+          <strong>{{ getCampoLabel(siguienteCampoB) }}:</strong>
+          {{ selectedVersionB[siguienteCampoB] }}
+        </p>
+      
+        <!-- Toggle Ver más / menos -->
+        <button *ngIf="!isExpandedB" (click)="isExpandedB = true" class="ver-mas-btn">
+          <i class="pi pi-chevron-down"></i>
+        </button>
+        <button *ngIf="isExpandedB" (click)="isExpandedB= false" class="ver-mas-btn">
+          <i class="pi pi-chevron-up"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="vs-instruccion" *ngIf="!selectedVersionA || !selectedVersionB">
+  <i class="pi pi-info-circle"></i>
+  <p>Selecciona dos versiones para comparar características</p>
+</div>
+
+<div *ngIf="categoriaSeleccionada && selectedVersionA && selectedVersionB" class="score-title-container">
+  <h2 class="comparacion-title">Resultados de la Comparación</h2>
+</div>
+<div *ngIf="(loadingIA || textoAnimado) && selectedVersionA && selectedVersionB" class="ia-veredicto-box">
+  <div class="ia-veredicto-inner">
+    <div class="ai-label" *ngIf="!loadingIA && labelAnimado">
+      <i class="pi pi-sparkles"></i> <span>{{ labelAnimado }}</span>
+    </div>
+    <p class="ia-veredicto-text">
+      <span *ngIf="loadingIA" class="loading-ia">
+        <i class="pi pi-spinner pi-spin"></i> Generando respuesta<span class="dots">...</span>
+      </span>
+      <span *ngIf="!loadingIA">{{ textoAnimado }}</span>
+    </p>
+  </div>
+</div>
+
+<div *ngIf="categoriaSeleccionada && selectedVersionA && selectedVersionB" class="score-wrapper">
+  <div class="score-box">
+    <div class="score-header">
+      <h4>Campos ganados</h4>
+    </div>
+    <span class="ganador-label">Ganador <strong>{{ nombreGanador }}</strong></span>
+    <ul>
+      <li *ngFor="let campo of comparacionesGanadas">
+        <i class="pi pi-check-circle"></i> {{ getCampoLabel(campo) }}
+      </li>
+    </ul>
+  </div>
+
+  <div class="score-chart">
+    <div class="score-title">
+      <i class="pi pi-bolt"></i>
+      <h4>Autenzy Score</h4>
+    </div>
+    <p-chart
+      type="bar"
+      [data]="chartData"
+      [options]="chartOptions"
+      [style]="{ width: '100%', height: '100px' }"
+    ></p-chart>
+  </div>
+
+  <div class="score-box ganador">
+    <i class="pi pi-trophy"></i>
+    <h2>{{ puntosGanador }}</h2>
+    <span>{{ nombreGanador }}</span>
+  </div>
+</div>
+
+<div class="top-comparisons-section" *ngIf="topComparisons.length > 0">
+  <h2 class="top-title">
+    <i class="pi pi-star-fill"></i> Comparaciones más populares
+  </h2>
+
+  <p-carousel
+    [value]="topComparisons"
+    [numVisible]="1"
+    [circular]="true"
+    [autoplayInterval]="6000"
+    [showIndicators]="true"
+    styleClass="top-carousel"
+  >
+    <ng-template let-comparison pTemplate="item">
+      <div class="comparison-cards">
+        <div class="position-number">{{ comparison.index + 1 }}</div>
+
+        <!-- Auto A -->
+        <div class="comparison-card" [ngClass]="{ 'ganador': comparison.ganador === 'A' }">
+          <div class="badges-floating" *ngIf="comparison.ganador === 'A'">
+            <span class="badge green">Ganador</span>
+            <span class="badge orange">{{ comparison.categoria }}</span>
+          </div>
+          <img [src]="comparison.imageA" alt="Auto A" />
+          <h4>{{ comparison.brandA }} {{ comparison.modelA }}</h4>
+          <p>{{ comparison.yearStartA }}-{{ comparison.yearEndA }}</p>
+          <small>{{ comparison.versionA }}</small>
+        </div>
+
+        <!-- Auto B -->
+        <div class="comparison-card" [ngClass]="{ 'ganador': comparison.ganador === 'B' }">
+          <div class="badges-floating" *ngIf="comparison.ganador === 'B'">
+            <span class="badge green">Ganador</span>
+            <span class="badge orange">{{ comparison.categoria }}</span>
+          </div>
+          <img [src]="comparison.imageB" alt="Auto B" />
+          <h4>{{ comparison.brandB }} {{ comparison.modelB }}</h4>
+          <p>{{ comparison.yearStartB }}-{{ comparison.yearEndB }}</p>
+          <small>{{ comparison.versionB }}</small>
+        </div>
+      </div>
+    </ng-template>
+  </p-carousel>
+</div>
+
+<app-footer></app-footer>
+</div>

@@ -1,0 +1,47 @@
+.autenzy-footer {
+    width: 100%;
+    background-color: #00b386;
+    padding: 1rem 0;
+    text-align: center;
+    font-size: 0.9rem;
+    color: white;
+a {
+  cursor: pointer;
+}
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+  
+      p {
+        margin: 0.3rem 0;
+  
+        &.contacto {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+  
+          i {
+            font-size: 1rem;
+          }
+  
+          a {
+            color: white;
+            text-decoration: none;
+            transition: 0.3s;
+            cursor: pointer;
+  
+            &:hover {
+              text-decoration: none;
+              opacity: 0.85;
+            }
+          }
+        }
+      }
+    }
+  }

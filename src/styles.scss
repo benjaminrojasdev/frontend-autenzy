@@ -2,9 +2,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 @import 'primeicons/primeicons.css';
 
-body {
-    background-color: white;
+html, body {
+    height: 100%;
     margin: 0;
+    padding: 0;
     font-family: 'Montserrat', sans-serif;
-    cursor: auto;
-}
+    background-color: #F8FAFC;
+  }
+  
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .app-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 100vh;
+  }
+  
+  .router-wrapper {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  app-footer {
+    display: flex; /* 👈 agregado ahora */
+    flex-direction: column;
+    margin-top: auto;
+  }
