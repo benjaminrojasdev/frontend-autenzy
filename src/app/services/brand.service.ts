@@ -49,4 +49,8 @@ export class BrandService {
     return this.http.get<any[]>(`/api/api/v1/comparisons/top5`);
   }
 
+  postComparison(comparisonData: any): Observable<any> {
+  return this.http.post<any>(`/api/api/v1/comparisons/save`, comparisonData);
+  }
+
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { HeaderComponent } from '../shared/components/header/header.component';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
@@ -8,14 +8,19 @@ import { CommonModule } from '@angular/common';
 import { ChartModule } from 'primeng/chart';
 import { FooterComponent } from '../shared/components/footer/footer.component';
 import { CarouselModule } from 'primeng/carousel';
+import { DialogModule } from 'primeng/dialog';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { AutenzyLoaderComponent } from '../shared/components/autenzy-loader/autenzy-loader.component';
+
 
 @Component({
   selector: 'app-comparator',
-  imports: [HeaderComponent, DropdownModule, FormsModule, CommonModule, ChartModule, FooterComponent,CarouselModule],
+  imports: [HeaderComponent, DropdownModule, FormsModule, CommonModule, ChartModule, FooterComponent, CarouselModule, ProgressSpinnerModule, AutenzyLoaderComponent, DialogModule],
   templateUrl: './comparator.component.html',
   styleUrl: './comparator.component.scss'
 })
 export class ComparatorComponent implements OnInit {
+  @ViewChild('scoreScroll') scoreWrapper!: ElementRef;
   token: string | null = null;
   comparaciones: { campo: string, resultado: 'A' | 'B' | 'empate' }[] = [];
   categoriaSeleccionada = '';
@@ -34,6 +39,8 @@ export class ComparatorComponent implements OnInit {
 
   labelAnimado: string = '';
   private labelFinal = 'Generado por Autenzy AI';
+
+  mostrarDialogo: boolean = false;
 
   brandsA: any[] = [];
   brandsB: any[] = [];
@@ -58,6 +65,8 @@ export class ComparatorComponent implements OnInit {
   selectedModelB: any;
   selectedDetailB: any;
   selectedVersionB: any;
+  cacheBusterA: number = Date.now();
+  cacheBusterB: number = Date.now();
 
 
   isExpandedA: boolean = false;
@@ -67,11 +76,18 @@ export class ComparatorComponent implements OnInit {
   loadingModelsA = false;
   loadingDetailsA = false;
   loadingVersionsA = false;
+  loadingImageA: boolean = true;
+  loadingPlaceholderA: boolean = true;
+  mostrarImagenA: boolean = false;
+
 
   loadingBrandsB = false;
   loadingModelsB = false;
   loadingDetailsB = false;
   loadingVersionsB = false;
+  loadingImageB: boolean = true;
+  loadingPlaceholderB: boolean = true;
+  mostrarImagenB: boolean = false;
 
   camposPrincipales: string[] = [];
   defaultCamposPrincipales: string[] = ['engine', 'transmission', 'drivertrain'];
@@ -83,10 +99,35 @@ export class ComparatorComponent implements OnInit {
 
   ngOnInit(): void {
     this.token = sessionStorage.getItem('token');
-    this.token ? this.loadBrands() : this.login();
+
+    if (this.token) {
+      this.inicializarDatos();
+    } else {
+      this.login(); // dentro de login() llamaremos a inicializarDatos() al terminar
+    }
+
     if (this.selectedVersionA && this.selectedVersionB) {
       this.compararCategoria();
     }
+  }
+
+  private inicializarDatos(): void {
+    this.loadBrands();
+    this.cargarTopComparaciones();
+  }
+
+  private cargarTopComparaciones(): void {
+    this.brandService.getTopComparisons().subscribe({
+      next: (data) => {
+        this.topComparisons = data.map((item, idx) => ({
+          ...item,
+          index: idx
+        }));
+      },
+      error: (err) => {
+        console.error('Error al obtener comparaciones populares:', err);
+      }
+    });
   }
 
   private login(): void {
@@ -94,7 +135,7 @@ export class ComparatorComponent implements OnInit {
       next: (res) => {
         sessionStorage.setItem('token', res.token);
         this.token = res.token;
-        this.loadBrands();
+        this.inicializarDatos();
       },
       error: () => {
         console.error('Error al iniciar sesión');
@@ -102,26 +143,17 @@ export class ComparatorComponent implements OnInit {
     });
   }
 
-private loadBrands(): void {
-  this.brandService.getAllBrands().subscribe({
-    next: (res) => {
-      this.brandsA = [...res];
-      this.brandsB = [...res];
-
-      this.brandService.getTopComparisons().subscribe({
-        next: (data) => {
-          this.topComparisons = data.map((item, idx) => ({ ...item, index: idx }));
-        },
-        error: (err) => {
-          console.error('Error al obtener comparaciones populares:', err);
-        }
-      });
-    },
-    error: () => {
-      console.error('Error al obtener marcas');
-    }
-  });
-}
+  private loadBrands(): void {
+    this.brandService.getAllBrands().subscribe({
+      next: (res) => {
+        this.brandsA = [...res];
+        this.brandsB = [...res];
+      },
+      error: () => {
+        console.error('Error al obtener marcas');
+      }
+    });
+  }
 
 
 
@@ -183,6 +215,8 @@ private loadBrands(): void {
         next: (res) => {
           this.versionsA = res;
           this.loadingVersionsA = false;
+
+          this.setDetailA(this.selectedDetailA);
 
           if (this.selectedVersionB) {
             this.compararCategoria();
@@ -254,6 +288,8 @@ private loadBrands(): void {
           this.versionsB = res;
           this.loadingVersionsB = false;
 
+          this.setDetailB(this.selectedDetailB);
+
           if (this.selectedVersionA) {
             this.compararCategoria();
           }
@@ -264,10 +300,60 @@ private loadBrands(): void {
       });
     }
   }
-  onImageError(event: Event) {
-    const imgElement = event.target as HTMLImageElement;
-    imgElement.src = 'https://via.placeholder.com/300x200?text=Imagen+no+disponible';
+
+  onImageError(event: any) {
+    event.target.src = '/car-comparison.webp';
+    this.loadingImageB = false;
   }
+
+  onImageLoadA() {
+    setTimeout(() => {
+      this.loadingImageA = false;
+    }, 500);
+  }
+
+  onImageLoadB() {
+    setTimeout(() => {
+      this.loadingImageB = false;
+    }, 500);
+  }
+
+  onPlaceholderLoadA() {
+    setTimeout(() => {
+      this.loadingPlaceholderA = false;
+    }, 500);
+  }
+
+  onPlaceholderLoadB() {
+    setTimeout(() => {
+      this.loadingPlaceholderB = false;
+    }, 500);
+  }
+
+  setDetailA(detail: any) {
+    this.loadingImageA = true;
+    this.loadingPlaceholderA = true;
+    this.mostrarImagenA = false;
+
+    setTimeout(() => {
+      this.selectedDetailA = detail;
+      this.mostrarImagenA = !!detail?.image;
+      this.cacheBusterA = Date.now();
+    }, 0);
+  }
+
+  setDetailB(detail: any) {
+    this.loadingImageB = true;
+    this.loadingPlaceholderB = true;
+    this.mostrarImagenB = false;
+
+    setTimeout(() => {
+      this.selectedDetailB = detail;
+      this.mostrarImagenB = !!detail?.image;
+      this.cacheBusterB = Date.now();
+    }, 0);
+  }
+
 
 
   getCategoriaIcon(): string {
@@ -288,6 +374,7 @@ private loadBrands(): void {
     const map: Record<string, string> = {
       'Argentina': 'ar',
       'Australia': 'au',
+      'Alemania': 'de',
       'Austria': 'at',
       'Brasil': 'br',
       'Canadá': 'ca',
@@ -314,6 +401,14 @@ private loadBrands(): void {
     return map[country] || 'un'; // 'un' = bandera por defecto
   }
 
+  scrollAResultado() {
+    setTimeout(() => {
+      if (this.scoreWrapper) {
+        this.scoreWrapper.nativeElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100); // le damos una mini pausa por si aún no renderiza
+  }
+
 
   compararCategoria(): void {
     if (!this.selectedVersionA || !this.selectedVersionB || !this.categoriaSeleccionada) {
@@ -325,24 +420,24 @@ private loadBrands(): void {
       this.respuestaIA = '';
       return;
     }
-  
+
     const A = this.selectedVersionA;
     const B = this.selectedVersionB;
-  
+
     const comparar = (
       campo: string,
       tipo: 'mayor' | 'menor'
     ): { campo: string; resultado: 'A' | 'B' | 'empate' } => {
       const valA = parseFloat(A[campo]);
       const valB = parseFloat(B[campo]);
-  
+
       if (isNaN(valA) || isNaN(valB)) return { campo, resultado: 'empate' };
       if (valA === valB) return { campo, resultado: 'empate' };
-  
+
       const mejorEsA = tipo === 'mayor' ? valA > valB : valA < valB;
       return { campo, resultado: mejorEsA ? 'A' : 'B' };
     };
-  
+
     switch (this.categoriaSeleccionada) {
       case 'performance':
         this.comparaciones = [
@@ -350,20 +445,21 @@ private loadBrands(): void {
           comparar('torque', 'mayor'),
           comparar('acceleration', 'menor'),
           comparar('weight', 'menor'),
-          this.compararDrivertrain() // ✅ comparación especial por prioridad
+          this.compararDrivertrain()
         ];
         this.camposPrincipales = ['power', 'torque', 'acceleration', 'weight', 'drivertrain'];
         break;
-  
+
       case 'comfort':
         this.comparaciones = [
-          comparar('wheels', 'mayor'),
+          comparar('height', 'mayor'),
           comparar('lenght', 'mayor'),
+          comparar('width', 'mayor'),
           comparar('trunk_capacity', 'mayor')
         ];
-        this.camposPrincipales = ['wheels', 'lenght', 'trunk_capacity'];
+        this.camposPrincipales = ['height', 'lenght', 'width', 'trunk_capacity'];
         break;
-  
+
       case 'eficiencia':
         this.comparaciones = [
           comparar('consumption', 'mayor'),
@@ -372,19 +468,19 @@ private loadBrands(): void {
         ];
         this.camposPrincipales = ['consumption', 'weight', 'displacement'];
         break;
-  
+
       default:
         this.comparaciones = [];
         this.camposPrincipales = [];
         return;
     }
-  
+
     this.isExpandedA = false;
     this.isExpandedB = false;
-  
+
     let puntosA = 0;
     let puntosB = 0;
-  
+
     this.comparaciones.forEach((c) => {
       if (c.resultado === 'A') puntosA++;
       else if (c.resultado === 'B') puntosB++;
@@ -393,13 +489,13 @@ private loadBrands(): void {
         puntosB++;
       }
     });
-  
+
     const ganador = puntosA > puntosB ? 'A' : puntosB > puntosA ? 'B' : 'empate';
-  
+
     this.comparacionesGanadas = this.comparaciones
       .filter(c => c.resultado === ganador)
       .map(c => c.campo);
-  
+
     this.puntosGanador = ganador === 'A' ? puntosA : puntosB;
     this.nombreGanador =
       ganador === 'A'
@@ -407,12 +503,12 @@ private loadBrands(): void {
         : ganador === 'B'
           ? `${this.selectedBrandB?.name} ${this.selectedModelB?.name}`
           : 'Empate';
-  
+
     this.updateChart(puntosA, puntosB);
-  
+
     const prompt = this.armarPrompt();
-    console.log('📝 PROMPT PARA IA:\n', prompt);
-  
+
+
     this.loadingIA = true;
     this.brandService.postOpinionArtificialIntelligence(prompt).subscribe({
       next: (res) => {
@@ -420,6 +516,7 @@ private loadBrands(): void {
         this.textoAnimado = '';
         this.animarTexto(res.respuesta);
         this.loadingIA = false;
+        this.enviarComparacionAlBackend();
       },
       error: (err) => {
         this.respuestaIA = 'No se pudo generar el veredicto.';
@@ -428,6 +525,7 @@ private loadBrands(): void {
         console.error('Error al obtener dictamen IA:', err);
       }
     });
+    this.scrollAResultado();
   }
 
   compararDrivertrain(): { campo: string; resultado: 'A' | 'B' | 'empate' } {
@@ -437,10 +535,10 @@ private loadBrands(): void {
       'Delantera': 1,
       '4x4': 0
     };
-  
+
     const valA = prioridad[this.selectedVersionA.drivertrain] || 0;
     const valB = prioridad[this.selectedVersionB.drivertrain] || 0;
-  
+
     if (valA === valB) return { campo: 'drivertrain', resultado: 'empate' };
     return {
       campo: 'drivertrain',
@@ -459,7 +557,8 @@ private loadBrands(): void {
       torque: 'Torque',
       engine: 'Motor',
       acceleration: 'Aceleración',
-      wheels: 'Llantas',
+      width: 'Ancho',
+      height: 'Altura',
       lenght: 'Largo',
       trunk_capacity: 'Maletero',
       consumption: 'Consumo',
@@ -470,210 +569,279 @@ private loadBrands(): void {
     return labels[campo] || campo;
   }
 
+updateChart(puntosA: number, puntosB: number): void {
+  const ganadorEsA = puntosA > puntosB;
+  const colorGanador = '#00b386';
+  const colorPerdedor = '#4C4862';
 
+  const backgroundColors = ganadorEsA
+    ? [colorGanador + '66', colorPerdedor + '66'] // 66 = opacidad aprox 40%
+    : [colorPerdedor + '66', colorGanador + '66'];
 
-  updateChart(puntosA: number, puntosB: number): void {
-    const ganadorEsA = puntosA > puntosB;
-    const colorGanador = '#00b386';
-    const colorPerdedor = '#4C4862';
+  const borderColors = ganadorEsA
+    ? [colorGanador, colorPerdedor]
+    : [colorPerdedor, colorGanador];
 
-    const backgroundColors = ganadorEsA
-      ? [colorGanador + '66', colorPerdedor + '66'] // 66 = opacidad aprox 40%
-      : [colorPerdedor + '66', colorGanador + '66'];
+  this.chartData = {
+    labels: [
+      `${this.selectedBrandA?.name} ${this.selectedModelA?.name}`,
+      `${this.selectedBrandB?.name} ${this.selectedModelB?.name}`,
+    ],
+    datasets: [
+      {
+        label: 'Puntaje',
+        backgroundColor: backgroundColors,
+        borderColor: borderColors,
+        borderWidth: 2,
+        borderRadius: 8,
+        data: [puntosA, puntosB]
+      }
+    ]
+  };
 
-    const borderColors = ganadorEsA
-      ? [colorGanador, colorPerdedor]
-      : [colorPerdedor, colorGanador];
-
-    this.chartData = {
-      labels: [
-        `${this.selectedBrandA?.name} ${this.selectedModelA?.name}`,
-        `${this.selectedBrandB?.name} ${this.selectedModelB?.name}`,
-      ],
-      datasets: [
-        {
-          label: 'Puntaje',
-          backgroundColor: backgroundColors,
-          borderColor: borderColors,
-          borderWidth: 2,
-          borderRadius: 8,
-          data: [puntosA, puntosB]
-        }
-      ]
-    };
-
-    this.chartOptions = {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: {
-        padding: {
-          top: 20,
-          bottom: 20,
-          left: 15,
-          right: 15
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#4C4862',
-          titleColor: '#fff',
-          bodyColor: '#fff',
-        }
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          grid: {
-            drawOnChartArea: false,
-            drawTicks: false
-          },
-          ticks: {
-            color: '#666'
-          }
+  this.chartOptions = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 20,
+        bottom: 20,
+        left: 15,
+        right: 15
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#4C4862',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+      }
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: {
+          drawOnChartArea: false,
+          drawTicks: false
         },
-        y: {
-          ticks: {
-            color: '#4C4862',
-            font: { weight: '600' }
-          },
-          grid: {
-            display: false
-          }
+        ticks: {
+          color: '#666'
+        }
+      },
+      y: {
+        ticks: {
+          color: '#4C4862',
+          font: { weight: '600' }
+        },
+        grid: {
+          display: false
         }
       }
-    };
-  }
-
-  esCampoPrincipal(campo: string): boolean {
-    if (this.camposPrincipales.length > 0) {
-      return this.camposPrincipales.includes(campo);
     }
-    return this.defaultCamposPrincipales.includes(campo);
+  };
+}
+
+getGanadorDimensiones(): 'A' | 'B' | 'empate' {
+  const claves = ['lenght', 'width', 'height'];
+  const conteo = { A: 0, B: 0, empate: 0 };
+
+  claves.forEach(campo => {
+    const resultado = this.getResultadoComparacion(campo);
+    if (resultado) conteo[resultado]++;
+  });
+
+  const max = Math.max(conteo.A, conteo.B, conteo.empate);
+
+  if (conteo.A === max && conteo.A !== conteo.B) return 'A';
+  if (conteo.B === max && conteo.B !== conteo.A) return 'B';
+  return 'empate';
+}
+
+esCampoPrincipal(campo: string): boolean {
+  if (this.camposPrincipales.length > 0) {
+    return this.camposPrincipales.includes(campo);
   }
+  return this.defaultCamposPrincipales.includes(campo);
+}
 
   get siguienteCampoA(): string | null {
-    if (!this.selectedVersionA || !this.camposPrincipales.length) return null;
+  if (!this.selectedVersionA || !this.camposPrincipales.length) return null;
 
-    const todosLosCampos = [
-      'engine', 'transmission', 'drivertrain', 'power', 'torque',
-      'acceleration', 'wheels', 'lenght', 'consumption',
-      'weight', 'displacement', 'cylinderConfiguration', 'induction',
-      'trunk_capacity'
-    ];
+  const todosLosCampos = [
+    'engine', 'transmission', 'drivertrain', 'power', 'torque',
+    'acceleration', 'wheels', 'lenght', 'consumption',
+    'weight', 'displacement', 'cylinderConfiguration', 'induction',
+    'trunk_capacity', 'height', 'width'
+  ];
 
-    return todosLosCampos.find(campo =>
-      !this.camposPrincipales.includes(campo)
-    ) || null;
-  }
+  return todosLosCampos.find(campo =>
+    !this.camposPrincipales.includes(campo)
+  ) || null;
+}
 
   get siguienteCampoB(): string | null {
-    if (!this.selectedVersionB || !this.camposPrincipales.length) return null;
+  if (!this.selectedVersionB || !this.camposPrincipales.length) return null;
 
-    const todosLosCampos = [
-      'engine', 'transmission', 'drivertrain', 'power', 'torque',
-      'acceleration', 'wheels', 'lenght', 'consumption',
-      'weight', 'displacement', 'cylinderConfiguration', 'induction',
-      'trunk_capacity'
-    ];
+  const todosLosCampos = [
+    'engine', 'transmission', 'drivertrain', 'power', 'torque',
+    'acceleration', 'wheels', 'lenght', 'consumption',
+    'weight', 'displacement', 'cylinderConfiguration', 'induction',
+    'trunk_capacity', 'height', 'width'
+  ];
 
-    return todosLosCampos.find(campo =>
-      !this.camposPrincipales.includes(campo)
-    ) || null;
-  }
+  return todosLosCampos.find(campo =>
+    !this.camposPrincipales.includes(campo)
+  ) || null;
+}
 
 
-  armarPrompt(): string {
-    const A = this.selectedVersionA;
-    const B = this.selectedVersionB;
+armarPrompt(): string {
+  const A = this.selectedVersionA;
+  const B = this.selectedVersionB;
 
-    const nombreA = `${this.selectedBrandA.name} ${this.selectedModelA.name}`;
-    const nombreB = `${this.selectedBrandB.name} ${this.selectedModelB.name}`;
-    const categoria = this.categorias.find(c => c.value === this.categoriaSeleccionada)?.label || this.categoriaSeleccionada;
+  const nombreA = `${this.selectedBrandA.name} ${this.selectedModelA.name}`;
+  const nombreB = `${this.selectedBrandB.name} ${this.selectedModelB.name}`;
+  const categoria = this.categorias.find(c => c.value === this.categoriaSeleccionada)?.label || this.categoriaSeleccionada;
 
-    const fichaAuto = (
-      nombre: string,
-      datos: any,
-      modelo: any,
-      origen: string
-    ): string => `${nombre}
+  const fichaAuto = (
+    nombre: string,
+    datos: any,
+    modelo: any,
+    origen: string
+  ): string => `${nombre}
   Marca: ${nombre.split(' ')[0]}, Modelo: ${this.getValor(modelo?.name)}, Año: ${this.getValor(this.selectedDetailA.label)}, Versión: ${this.getValor(datos.name)}, Origen: ${this.getValor(origen)}, Motor: ${this.getValor(datos.engine)}, Transmisión: ${this.getValor(datos.transmission)}, Tracción: ${this.getValor(datos.drivertrain)}, Caballos de fuerza: ${this.getValor(datos.power)} HP, Torque: ${this.getValor(datos.torque)} NM, 0-100 Km/h: ${this.getValor(datos.acceleration)} s, Llantas: ${this.getValor(datos.wheels)}, Dimensiones: ${this.getValor(datos.lenght)} / ${this.getValor(datos.width)} / ${this.getValor(datos.height)} mm, Consumo: ${this.getValor(datos.consumption)} km/L, Peso: ${this.getValor(datos.weight)} kg, Cilindrada: ${this.getValor(datos.displacement)}, Cilindros: ${this.getValor(datos.cylinderConfiguration)}, Inducción: ${this.getValor(datos.induction)}, Maletero: ${this.getValor(datos.trunk_capacity)} L`;
 
-    const camposGanados = this.comparaciones
-      .filter(c => c.resultado === (this.nombreGanador === nombreA ? 'A' : 'B'))
-      .map(c => this.getCampoLabel(c.campo));
+  const camposGanados = this.comparaciones
+    .filter(c => c.resultado === (this.nombreGanador === nombreA ? 'A' : 'B'))
+    .map(c => this.getCampoLabel(c.campo));
 
-    const camposPerdidos = this.comparaciones
-      .filter(c => {
-        if (this.nombreGanador === 'Empate') return false;
-        return c.resultado === (this.nombreGanador === nombreA ? 'B' : 'A');
-      })
-      .map(c => this.getCampoLabel(c.campo));
+  const camposPerdidos = this.comparaciones
+    .filter(c => {
+      if (this.nombreGanador === 'Empate') return false;
+      return c.resultado === (this.nombreGanador === nombreA ? 'B' : 'A');
+    })
+    .map(c => this.getCampoLabel(c.campo));
 
-    const camposEmpatados = this.comparaciones
-      .filter(c => c.resultado === 'empate')
-      .map(c => this.getCampoLabel(c.campo));
+  const camposEmpatados = this.comparaciones
+    .filter(c => c.resultado === 'empate')
+    .map(c => this.getCampoLabel(c.campo));
 
-    let promptFinal = (
-      `${fichaAuto(nombreA, A, this.selectedModelA, this.selectedDetailA.origin)}\n\n` +
-      `${fichaAuto(nombreB, B, this.selectedModelB, this.selectedDetailB.origin)}\n\n` +
-      `Categoría: ${categoria}\n` +
-      `Ganador: ${this.nombreGanador}\n` +
-      `Campos ganados: ${camposGanados.join(', ') || 'Ninguno'}\n` +
-      `Campos perdidos: ${camposPerdidos.join(', ') || 'Ninguno'}\n` +
-      `Campos empatados: ${camposEmpatados.join(', ') || 'Ninguno'}`);
+  let promptFinal = (
+    `${fichaAuto(nombreA, A, this.selectedModelA, this.selectedDetailA.origin)}\n\n` +
+    `${fichaAuto(nombreB, B, this.selectedModelB, this.selectedDetailB.origin)}\n\n` +
+    `Categoría: ${categoria}\n` +
+    `Ganador: ${this.nombreGanador}\n` +
+    `Campos ganados: ${camposGanados.join(', ') || 'Ninguno'}\n` +
+    `Campos perdidos: ${camposPerdidos.join(', ') || 'Ninguno'}\n` +
+    `Campos empatados: ${camposEmpatados.join(', ') || 'Ninguno'}`);
 
-    if (this.categoriaSeleccionada === 'performance') {
-      promptFinal += `
+  if (this.categoriaSeleccionada === 'performance') {
+    promptFinal += `
   
-   IMPORTANTE:
-  Aunque los puntos están basados en especificaciones técnicas (como potencia, torque, aceleración y peso), si el resultado es muy ajustado o hay empate técnico, debes considerar lo siguiente:
-  
-  - Transmisión: ¿Es manual, automática, doble embrague o CVT? Esto afecta la respuesta y el rendimiento real.
-  - Tracción: ¿Es delantera, trasera o integral? Esto influye en el comportamiento dinámico y aceleración efectiva.
-  
-  Usa tu criterio experto para decidir cuál vehículo tiene una ventaja real en términos de performance aunque los datos sean similares.`;
+        IMPORTANTE:
+        Aunque los puntos están basados en especificaciones técnicas (como potencia, torque, aceleración y peso), si el resultado es muy ajustado o hay empate técnico, debes considerar lo siguiente:
+        
+      - Transmisión: Evalúa el tipo de caja de cambios considerando su impacto en la performance. En términos generales:
+
+            • Una caja **manual (MT)** ofrece mayor control y respuesta directa, ideal para conducción deportiva.
+            • Una **CVT** está orientada a la eficiencia y suavidad, no al rendimiento.
+            • Una **automática convencional (AT)** con convertidor de par suele tener respuestas menos deportivas, pero puede variar según su calibración.
+            • Una **doble embrague (DCT)** combina cambios rápidos con buena eficiencia, y suele ser superior en rendimiento, aunque depende del fabricante.
+
+          Si ambos vehículos poseen la misma tecnología (ej: dos CVT o dos AT), considera cuál ofrece mejor sensación deportiva, cambios simulados, modos de conducción, o reputación de marca en transmisiones. 
+          No asumas que son equivalentes solo por el nombre: **la calidad y calibración del fabricante pueden marcar una diferencia real.**
+          
+        - Tracción: ¿Es delantera, trasera o integral? Esto influye en el comportamiento dinámico y aceleración efectiva.
+        
+        Usa tu criterio experto para decidir cuál vehículo tiene una ventaja real en términos de performance aunque los datos sean similares.`;
+  }
+
+  return promptFinal;
+}
+getValor(valor: any): string {
+  if (valor === undefined || valor === null) return 'No disponible';
+  if (!isNaN(valor) && typeof valor === 'number') {
+    return valor % 1 === 0 ? valor.toFixed(1) : valor.toString();
+  }
+  return valor.toString();
+}
+
+animarTexto(texto: string) {
+  this.textoAnimado = '';
+  this.labelAnimado = '';
+  let i = 0;
+  const velocidad = 15;
+
+  const escribir = () => {
+    if (i < texto.length) {
+      this.textoAnimado += texto.charAt(i);
+      i++;
+      setTimeout(escribir, velocidad);
+    } else {
+      this.animarLabel();
     }
+  };
 
-    return promptFinal;
+  escribir();
+}
+
+animarLabel() {
+  let j = 0;
+  const velocidadLabel = 25;
+
+  const escribirLabel = () => {
+    if (j < this.labelFinal.length) {
+      this.labelAnimado += this.labelFinal.charAt(j);
+      j++;
+      setTimeout(escribirLabel, velocidadLabel);
+    }
+  };
+
+  escribirLabel();
+}
+
+getGanador(): 'A' | 'B' | 'empate' {
+  const puntosA = this.comparaciones.filter(c => c.resultado === 'A').length;
+  const puntosB = this.comparaciones.filter(c => c.resultado === 'B').length;
+  return puntosA > puntosB ? 'A' : puntosB > puntosA ? 'B' : 'empate';
+}
+
+
+capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+enviarComparacionAlBackend() {
+  if (!this.selectedVersionA || !this.selectedVersionB || !this.categoriaSeleccionada) {
+    console.warn('Faltan datos para enviar la comparación');
+    return;
   }
-  getValor(valor: any): string {
-    return valor !== undefined && valor !== null ? valor.toString() : 'No disponible';
-  }
 
-  animarTexto(texto: string) {
-    this.textoAnimado = '';
-    this.labelAnimado = '';
-    let i = 0;
-    const velocidad = 15;
+  const payload = {
+    brandAId: this.selectedBrandA?.id,
+    brandBId: this.selectedBrandB?.id,
+    modelAId: this.selectedModelA?.id,
+    modelBId: this.selectedModelB?.id,
+    modelDetailAId: this.selectedDetailA?.value,
+    modelDetailBId: this.selectedDetailB?.value,
+    versionAid: this.selectedVersionA?.id,
+    versionBid: this.selectedVersionB?.id,
+    categoria: this.capitalize(this.categoriaSeleccionada),
+    ganador: this.getGanador()
+  };
 
-    const escribir = () => {
-      if (i < texto.length) {
-        this.textoAnimado += texto.charAt(i);
-        i++;
-        setTimeout(escribir, velocidad);
-      } else {
-        this.animarLabel();
-      }
-    };
+  console.log('📤 Payload correcto:', payload);
 
-    escribir();
-  }
-
-  animarLabel() {
-    let j = 0;
-    const velocidadLabel = 25;
-
-    const escribirLabel = () => {
-      if (j < this.labelFinal.length) {
-        this.labelAnimado += this.labelFinal.charAt(j);
-        j++;
-        setTimeout(escribirLabel, velocidadLabel);
-      }
-    };
-
-    escribirLabel();
-  }
+  this.brandService.postComparison(payload).subscribe({
+    next: (res) => {
+      console.log('✅ Comparación guardada exitosamente:', res);
+    },
+    error: (err) => {
+      console.error('❌ Error al guardar comparación:', err);
+    }
+  });
+}
 
 }

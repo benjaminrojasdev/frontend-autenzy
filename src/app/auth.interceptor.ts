@@ -1,24 +1,45 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent } from '@angular/common/http';
+import { AuthServiceService } from './auth-service.service';
+import { catchError, switchMap, throwError, EMPTY, Observable } from 'rxjs';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  // No meter token en las OPTIONS
+  const authService = inject(AuthServiceService);
+
   if (req.method === 'OPTIONS') {
     return next(req);
   }
 
-  if (typeof window !== 'undefined') {
-    const token = sessionStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
+ 
+  const authReq = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
 
-    if (token) {
-      const authReq = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+  return next(authReq).pipe(
+    catchError((err) => {
+      if (err.status === 401 || err.status === 403) {
+        sessionStorage.removeItem('token');
 
-      return next(authReq);
-    }
-  }
+        return authService.login().pipe(
+          switchMap((res) => {
 
-  return next(req);
+            if (res?.token) {
+              sessionStorage.setItem('token', res.token);
+              location.reload();
+              return EMPTY;
+            } else {
+              return throwError(() => err);
+            }
+          }),
+          catchError((loginErr) => {
+            location.href = '/';
+            return throwError(() => err);
+          })
+        );
+      }
+
+      return throwError(() => err);
+    })
+  );
 };

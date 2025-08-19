@@ -4,83 +4,84 @@
   <!-- CABECERA -->
   <div class="vehicle-header">
     <h1 class="vehicle-title">Busca tu modelo de auto</h1>
+
     <!-- Buscador -->
     <div class="vehicle-search-bar">
-      <p-dropdown
-        [options]="brands"
-        [(ngModel)]="selectedBrand"
-        optionLabel="name"
-        placeholder="Marca"
-        [filter]="true"
-        (onChange)="onBrandSelected($event)"
-        class="dropdown-custom"
-        [showClear]="true"
-      >
-        <ng-template let-item pTemplate="item">
-          <div class="item-content">
-            <span>{{ item.name }}</span>
-            <img
-              [src]="
-                'https://flagcdn.com/24x18/' +
-                getCountryCode(item.country) +
-                '.png'
-              "
-              width="24"
-              height="18"
-              alt="{{ item.country }}"
-            />
-          </div>
-        </ng-template>
+  <!-- Dropdown de Marca -->
+  <p-dropdown
+    [options]="brands"
+    [(ngModel)]="selectedBrand"
+    optionLabel="name"
+    placeholder="Marca"
+    [filter]="true"
+    class="dropdown-custom"
+    [showClear]="true"
+    [loading]="loadingBrands"
+    (onChange)="onBrandSelected($event)"
+    (onClear)="onClearBrand()"
+  >
+    <ng-template let-item pTemplate="item">
+      <div class="item-content">
+        <span>{{ item.name }}</span>
+        <img
+          [src]="'https://flagcdn.com/24x18/' + getCountryCode(item.country) + '.png'"
+          width="24"
+          height="18"
+          alt="{{ item.country }}"
+        />
+      </div>
+    </ng-template>
 
-        <ng-template let-item pTemplate="selectedItem">
-          <div class="item-content">
-            <span *ngIf="item">{{ item.name }}</span>
-            <img
-              *ngIf="item"
-              [src]="
-                'https://flagcdn.com/24x18/' +
-                getCountryCode(item.country) +
-                '.png'
-              "
-              width="24"
-              height="18"
-              alt="{{ item.country }}"
-            />
-            <span *ngIf="!item">Selecciona una marca</span>
-          </div>
-        </ng-template>
-      </p-dropdown>
+    <ng-template let-item pTemplate="selectedItem">
+      <div class="item-content">
+        <span *ngIf="item">{{ item.name }}</span>
+        <img
+          *ngIf="item"
+          [src]="'https://flagcdn.com/24x18/' + getCountryCode(item.country) + '.png'"
+          width="24"
+          height="18"
+          alt="{{ item.country }}"
+        />
+        <span *ngIf="!item">Selecciona una marca</span>
+      </div>
+    </ng-template>
+  </p-dropdown>
 
-      <p-dropdown
-        [options]="vehicleTypes"
-        [(ngModel)]="selectedVehicleType"
-        placeholder="Tipo de Vehículo"
-        optionLabel="label"
-        class="dropdown-custom"
-      >
-        <ng-template let-item pTemplate="item">
-          <div class="item-content">
-            <span>{{ item.label }}</span>
-            <img [src]="item.icon" class="vehicle-type-icon" />
-          </div>
-        </ng-template>
+  <!-- Dropdown de Tipo -->
+  <p-dropdown
+    [options]="vehicleTypes"
+    [(ngModel)]="selectedVehicleType"
+    placeholder="Tipo de Vehículo"
+    optionLabel="label"
+    class="dropdown-custom"
+    [showClear]="true"
+    [loading]="loadingVehicleTypes"
+    (onClear)="selectedVehicleType = null"
+  >
+    <ng-template let-item pTemplate="item">
+      <div class="item-content">
+        <span>{{ item.label }}</span>
+        <img [src]="item.icon" class="vehicle-type-icon" />
+      </div>
+    </ng-template>
 
-        <ng-template let-item pTemplate="selectedItem">
-          <div class="item-content">
-            <span *ngIf="item">{{ item.label }}</span>
-            <img *ngIf="item" [src]="item.icon" class="vehicle-type-icon" />
-          </div>
-        </ng-template>
-      </p-dropdown>
+    <ng-template let-item pTemplate="selectedItem">
+      <div class="item-content">
+        <span *ngIf="item">{{ item.label }}</span>
+        <img *ngIf="item" [src]="item.icon" class="vehicle-type-icon" />
+      </div>
+    </ng-template>
+  </p-dropdown>
 
-      <button
-      pButton
-      class="search-btn"
-      (click)="onVehicleClick(selectedVehicleType?.value)"
-    >
-      Buscar
-    </button>
-    </div>
+  <!-- Botón de búsqueda -->
+  <button
+    pButton
+    class="search-btn"
+    (click)="onVehicleClick(selectedVehicleType?.value)"
+  >
+    Buscar
+  </button>
+</div>
 
     <!-- Imagen inferior -->
     <img
@@ -108,6 +109,7 @@
         >
           <ng-container *ngIf="model.details?.length">
             <ng-container *ngFor="let detail of model.details">
+              <!-- Imagen -->
               <img
                 *ngIf="detail.image"
                 [src]="detail.image"
@@ -115,74 +117,65 @@
                 class="model-image"
               />
 
+              <!-- Información del modelo -->
               <ul class="model-info">
                 <li>
-                  <strong>Modelo:</strong> {{ selectedBrand?.name }}
-                  {{ detail.modelName }}
+                  <strong>Modelo:</strong> {{ selectedBrand?.name }} {{ detail.modelName }}
                 </li>
-                <li><strong>Detalle:</strong> {{ detail.nameDetails }}</li>
                 <li>
-                  <strong>Año:</strong> {{ detail.yearStart }} -
-                  {{ detail.yearEnd }}
+                  <strong>Año:</strong> {{ detail.yearStart }} - {{ detail.yearEnd }}
                 </li>
                 <li>
                   <strong>Origen:</strong> {{ detail.origin }}
                   <img
-                    [src]="
-                      'https://flagcdn.com/24x18/' +
-                      getCountryCode(detail.origin) +
-                      '.png'
-                    "
+                    [src]="'https://flagcdn.com/24x18/' + getCountryCode(detail.origin) + '.png'"
                     alt="{{ detail.origin }}"
                     width="18"
                     height="18"
                   />
                 </li>
 
-                <!-- VERSIONES -->
+                <!-- Versión seleccionada o disponibles -->
                 <ng-container *ngIf="detail?.idDetails !== undefined">
-                  <ng-container
-                    *ngIf="versionsMap[detail.idDetails] as versions"
-                  >
+                  <ng-container *ngIf="versionsMap[detail.idDetails] as versions">
                     <ng-container *ngIf="versions.length > 0">
                       <li>
                         <strong>Motor:</strong>
                         {{
                           selectedVersionMap[detail.idDetails]?.engine ||
-                            getUniqueValues(versions, "engine")
+                          getUniqueValues(versions, 'engine')
                         }}
                       </li>
                       <li>
                         <strong>Transmisión:</strong>
                         {{
                           selectedVersionMap[detail.idDetails]?.transmission ||
-                            getUniqueValues(versions, "transmission")
+                          getUniqueValues(versions, 'transmission')
                         }}
                       </li>
                       <li>
                         <strong>Tracción:</strong>
                         {{
                           selectedVersionMap[detail.idDetails]?.drivertrain ||
-                            getUniqueValues(versions, "drivertrain")
+                          getUniqueValues(versions, 'drivertrain')
                         }}
-                      </li>
-                      <li>
-                        <strong>Selecciona versión:</strong>
-                        <p-dropdown
-                          [options]="versions"
-                          [(ngModel)]="selectedVersionMap[detail.idDetails]"
-                          optionLabel="name"
-                          placeholder="Versión"
-                          styleClass="version-dropdown"
-                          (onChange)="
-                            selectVersion(detail.idDetails, $event.value)
-                          "
-                        ></p-dropdown>
                       </li>
                     </ng-container>
                   </ng-container>
                 </ng-container>
               </ul>
+
+              <!-- Dropdown al fondo -->
+                <p-dropdown
+                  *ngIf="versionsMap[detail.idDetails]"
+                  class="version-dropdown"
+                  [options]="versionsMap[detail.idDetails]"
+                  [(ngModel)]="selectedVersionMap[detail.idDetails]"
+                  optionLabel="name"
+                  placeholder="Versión"
+                  appendTo="parent"
+                  (onChange)="selectVersion(detail.idDetails, $event.value)"
+                ></p-dropdown>
             </ng-container>
           </ng-container>
         </p-card>
@@ -190,5 +183,7 @@
     </div>
   </div>
 </div>
+
 <app-footer></app-footer>
+
 <app-autenzy-loader *ngIf="hasInteracted && loadingModels" [visible]="true"></app-autenzy-loader>

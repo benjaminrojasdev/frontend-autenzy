@@ -1,0 +1,195 @@
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+  color: white;
+  text-align: center;
+  padding: 2rem 1rem;
+  min-height: 80.8vh;
+
+  opacity: 0;
+  animation: fadeIn 3s ease forwards;
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    filter: brightness(0.5);
+  }
+  to {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+ p {
+  font-size: 0.9rem;
+  color: #777;
+  margin-top: 1rem;
+  }
+
+.slogan {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 2.2rem;
+  font-weight: 300;
+  line-height: 3rem;
+  margin-bottom: 2.5rem;
+
+  .typewriter-text {
+    white-space: nowrap;
+    overflow: hidden;
+    width: 0;
+    opacity: 0;
+
+    // paso 1: typing + color base gris
+    color: #777;
+    animation:
+      typing-clean 1s steps(10, end) forwards;
+
+    // paso 2: activar efecto brocha luego del typing
+    &.animated {
+      color: transparent;
+      background: linear-gradient(90deg, #777 0%, #00b894 50%, #777 100%);
+      background-size: 200%;
+      background-position: -100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation:
+        typing-clean 1s steps(10, end) forwards,
+        brocha 3s ease-in-out infinite;
+    }
+
+    &:nth-child(2) {
+      animation-delay: 1.2s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 2.4s;
+    }
+  }
+}
+
+// typing
+@keyframes typing-clean {
+  from {
+    width: 0;
+    opacity: 1;
+  }
+  to {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+// brocha infinita
+@keyframes brocha {
+  0% {
+    background-position: -100%;
+  }
+  50% {
+    background-position: 100%;
+  }
+  100% {
+    background-position: -100%;
+  }
+}
+.vehicles {
+  margin: 2rem 0;
+
+  img {
+    width: 100%;
+    max-width: 40rem;
+    height: auto;
+    object-fit: contain;
+
+    @media (min-width: 48em) {
+      max-width: 50rem;
+    }
+  }
+}
+
+.button-group {
+  display: flex;
+  gap: 7rem;
+  margin-top: 3rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  .cta-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 20rem;
+    text-align: center;
+
+    .cta-text {
+      font-size: 1rem;
+      color: #777;
+      font-weight: 400;
+    }
+
+    &.primary {
+      .cta-text {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #00695c;
+      }
+    }
+  }
+
+  .btn {
+    border-radius: 0.75rem;
+    padding: 0.75rem 2.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+  }
+
+  .btn-primary {
+    background-color: #00b894;
+    color: white;
+    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.2);
+    border: 1px solid #00b894;
+
+    &:hover {
+      background-color: #00e1bb;
+      border: 1px solid #00e1bb;
+      transform: translateY(-0.1rem);
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: #00b894;
+    border: 1px solid #00b894;
+    box-shadow: none;
+
+    &:hover {
+      background: #e0f7f1;
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .button-group {
+    gap: 2rem;
+  }
+}

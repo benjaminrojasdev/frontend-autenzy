@@ -11,6 +11,7 @@ import Material from '@primeng/themes/aura';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './auth.interceptor';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { MessageService } from 'primeng/api';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideZoneChangeDetection({ eventCoalescing: true }), 
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
                 }
             }
         }),
-        provideAnimations()
+        provideAnimations(),
+        MessageService
   ]
 };

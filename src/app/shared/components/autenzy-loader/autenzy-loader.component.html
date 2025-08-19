@@ -1,6 +1,9 @@
-<div class="autenzy-loader-overlay">
-    <div class="autenzy-loader">
-      <div class="spinner-ring"></div>
-      <img class="autenzy-logo" src="/autenzy-icon.webp" alt="Cargando..." />
-    </div>
+<div *ngIf="visible" [ngClass]="{
+  'autenzy-loader-overlay': !inline,
+  'autenzy-loader-inline': inline
+}">
+  <div class="autenzy-loader">
+    <div class="spinner-ring"></div>
+    <img class="autenzy-logo" src="/autenzy-icon.webp" alt="Cargando..." />
   </div>
+</div>

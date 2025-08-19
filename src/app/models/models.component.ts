@@ -16,7 +16,7 @@ import { FooterComponent } from '../shared/components/footer/footer.component';
 
 @Component({
   selector: 'app-models',
-  imports: [CommonModule, HeaderComponent, AutoCompleteModule, FormsModule, HttpClientModule, ListboxModule, DropdownModule, AccordionModule, CardModule, SkeletonModule, AutenzyLoaderComponent,FooterComponent],
+  imports: [CommonModule, HeaderComponent, AutoCompleteModule, FormsModule, HttpClientModule, ListboxModule, DropdownModule, AccordionModule, CardModule, SkeletonModule, AutenzyLoaderComponent, FooterComponent],
   templateUrl: './models.component.html',
   styleUrl: './models.component.scss'
 })
@@ -34,6 +34,8 @@ export class ModelsComponent implements OnInit {
   showHeaderImage: boolean = true;
   hasInitialized: boolean = false;
   hasInteracted: boolean = false;
+  loadingBrands = false;
+  loadingVehicleTypes = false;
 
 
 
@@ -42,14 +44,11 @@ export class ModelsComponent implements OnInit {
     private brandService: BrandService
   ) {
     this.loadingModels = false;
-    console.log('[constructor] loadingModels:', this.loadingModels);
   }
 
   ngOnInit(): void {
     this.loadingModels = false;
     this.hasInitialized = true;
-    console.log('[ngOnInit] loadingModels:', this.loadingModels);
-    console.log('[ngOnInit] hasInitialized:', this.hasInitialized);
     if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
       const token = sessionStorage.getItem('token');
       token ? this.loadBrands() : this.login();
@@ -72,16 +71,19 @@ export class ModelsComponent implements OnInit {
     });
   }
 
-  private loadBrands(): void {
-    this.brandService.getAllBrands().subscribe({
-      next: (res) => {
-        this.brands = res;
-      },
-      error: () => {
-        console.error('Error al obtener las marcas.');
-      }
-    });
-  }
+private loadBrands(): void {
+  this.loadingBrands = true;
+  this.brandService.getAllBrands().subscribe({
+    next: (res) => {
+      this.brands = res;
+      this.loadingBrands = false;
+    },
+    error: () => {
+      console.error('Error al obtener las marcas.');
+      this.loadingBrands = false;
+    }
+  });
+}
 
   search(event: any): void {
     const query = event.query.toLowerCase();
@@ -94,6 +96,7 @@ export class ModelsComponent implements OnInit {
     const map: Record<string, string> = {
       'Japón': 'jp',
       'Corea del Sur': 'kr',
+      'Brasil': 'br',
       'Alemania': 'de',
       'Estados Unidos': 'us',
       'Italia': 'it',
@@ -103,33 +106,38 @@ export class ModelsComponent implements OnInit {
       'España': 'es',
       'China': 'cn'
     };
-    return map[country] || 'un'; // bandera por defecto
+    return map[country] || 'un';
   }
 
   onBrandSelected(event: any): void {
-    console.log('🔎 selectedBrand:', this.selectedBrand);
-    const brand = event.value;
-    const brandId = brand?.id;
-    if (!brandId) return;
+  const brand = event.value;
+  this.selectedVehicleType = null;
+  this.vehiclesByType = null;
+  this.loadingVehicleTypes = true;
 
-    this.brandService.getVehiclesByBrand(brandId).subscribe({
-      next: (res) => {
-        console.log('🚗 Vehículos:', res);
-
-        const types = [...new Set(res.map(v => v.nameType))];
-
-        // Transforma a formato visual para el dropdown con imagen
-        this.vehicleTypes = types.map((type: string) => ({
-          label: type,
-          value: type,
-          icon: this.getVehicleIcon(type)
-        }));
-      },
-      error: (err) => {
-        console.error('💥 Error al obtener vehículos:', err);
-      }
-    });
+  if (!brand?.id) {
+    this.vehicleTypes = [];
+    this.loadingVehicleTypes = false;
+    return;
   }
+
+  this.brandService.getVehiclesByBrand(brand.id).subscribe({
+    next: (res) => {
+      const types = [...new Set(res.map(v => v.nameType))];
+      this.vehicleTypes = types.map((type: string) => ({
+        label: type,
+        value: type,
+        icon: this.getVehicleIcon(type)
+      }));
+      this.loadingVehicleTypes = false;
+    },
+    error: (err) => {
+      console.error('💥 Error al obtener vehículos:', err);
+      this.vehicleTypes = [];
+      this.loadingVehicleTypes = false;
+    }
+  });
+}
 
   getVehicleIcon(type: string): string {
     const icons: Record<string, string> = {
@@ -147,43 +155,43 @@ export class ModelsComponent implements OnInit {
 
   onVehicleClick(type: string): void {
     const loaderStart = Date.now();
-  
+
     if (!type || !this.selectedBrand) {
       console.warn('🚫 Debes seleccionar una marca y un tipo de vehículo');
       return;
     }
-  
+
     const brandId = this.selectedBrand?.id;
     if (!brandId) {
       console.error('Marca no seleccionada');
       return;
     }
-  
+
     this.showHeaderImage = false;
     this.vehiclesByType = null;
     this.versionsMap = {};
     this.hasInteracted = true;
     this.loadingModels = true;
-  
+
     let pendingVersions = 0;
-  
+
     const endLoadingAfterMinimum = () => {
       const elapsed = Date.now() - loaderStart;
       const remaining = Math.max(0, 3000 - elapsed); // mínimo 3 segundos
       console.log(`[loader] esperando ${remaining}ms más para completar 3s...`);
-  
+
       setTimeout(() => {
         this.loadingModels = false;
         console.log('[loader] ocultado después del tiempo mínimo');
       }, remaining);
     };
-  
+
     const tryFinishLoading = () => {
       if (pendingVersions === 0) {
         endLoadingAfterMinimum();
       }
     };
-  
+
     this.brandService.getVehiclesByBrand(brandId).subscribe({
       next: (res) => {
         const vehicleMatch = res.find(v => v.nameType === type);
@@ -192,19 +200,19 @@ export class ModelsComponent implements OnInit {
           tryFinishLoading();
           return;
         }
-  
+
         const typeId = vehicleMatch.idVehicle;
-  
+
         this.brandService.getVehiclesByBrandAndType(brandId, typeId).subscribe({
           next: (response) => {
             this.vehiclesByType = response;
-  
+
             response.models.forEach((model: any) => {
               model.details.forEach((detail: any) => {
                 const id = detail.idDetails;
                 if (id !== undefined && id !== null && !this.versionsMap[id]) {
                   pendingVersions++; // 👈 sumamos 1 pendiente
-  
+
                   this.brandService.getVersionsByDetailId(id).subscribe({
                     next: (versions) => {
                       this.versionsMap[id] = versions;
@@ -220,7 +228,7 @@ export class ModelsComponent implements OnInit {
                 }
               });
             });
-  
+
             // En caso de que no se hayan solicitado versiones
             tryFinishLoading();
           },
@@ -253,5 +261,13 @@ export class ModelsComponent implements OnInit {
   toggleDropdown(idDetail: number): void {
     this.dropdownOpen[idDetail] = !this.dropdownOpen[idDetail];
   }
+
+  onClearBrand(): void {
+  this.selectedBrand = null;
+  this.selectedVehicleType = null;
+  this.vehicleTypes = [];
+  this.vehiclesByType = null;
+  this.showHeaderImage = true;
+}
 
 }

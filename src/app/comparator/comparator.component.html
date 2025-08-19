@@ -5,11 +5,70 @@
 <div class="comparador-header">
   <h1>Comparador de Autos</h1>
   <p>
-    Compara las características técnicas de dos vehículos y encuentra el que mejor se adapta a tus necesidades. 
-    Revisa datos como potencia, torque, aceleración, consumo de combustible, dimensiones, tipo de motor y más. <strong>¡Selecciona dos modelos y descubre cuál es el ideal para ti!</strong>
+    Selecciona la marca, modelo, año y version de los automoviles para <strong>descubrir cuál se adapta mejor a tus necesidades</strong>
   </p>
 </div>
 
+<button 
+  class="btn-ayuda-flotante" 
+  title="¿Cómo usar el comparador?" 
+  (click)="mostrarDialogo = true">
+  <i class="pi pi-info-circle"></i>
+</button>
+
+<p-dialog 
+  header="¿Cómo funciona el comparador?" 
+  [(visible)]="mostrarDialogo" 
+  modal 
+  [style]="{ width: '90vw', maxWidth: '700px' }" 
+  [breakpoints]="{ '768px': '95vw' }" 
+  [closable]="true" 
+  [dismissableMask]="true">
+
+  <div class="explicacion-comparador">
+    
+    <div class="seccion">
+      <h3>Paso 1: Selecciona tus autos</h3>
+      <div class="contenido alterno-izq">
+        <div class="texto">
+          <p>Elige una marca, modelo, año y versión para los dos autos que quieras comparar. Verás cómo se cargan automáticamente los datos.</p>
+        </div>
+        <img src="/tutorial-marca-modelo.webp" alt="Seleccionar autos" />
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h3>Paso 2: Elige la categoría</h3>
+      <div class="contenido alterno-der">
+        <img src="/tutorial-categoria.webp" alt="Seleccionar categoría" />
+        <div class="texto">
+          <p>Puedes comparar según <strong>Performance</strong>, <strong>Confort</strong> o <strong>Eficiencia</strong>. Esto afecta qué campos se evaluarán.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h3>Paso 3: Veredicto de la IA</h3>
+      <div class="contenido alterno-izq">
+        <div class="texto">
+          <p>La inteligencia artificial analiza los datos y te entrega un <strong>veredicto natural</strong> explicando por qué un vehículo es mejor que otro.</p>
+        </div>
+        <img src="/tutorial-veredicto.webp" alt="Veredicto IA" />
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h3>Paso 4: Resultado visual</h3>
+      <div class="contenido alterno-der">
+        <img src="/tutorial-resultado.webp" alt="Resultados visuales" />
+        <div class="texto">
+          <p>Revisa en qué campos gana cada auto, el puntaje global (<strong>Autenzy Score</strong>) y el desglose por categoría.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</p-dialog>
 <!-- CONTENEDOR PRINCIPAL: A - VS - B -->
 <div class="vs-container">
 
@@ -62,13 +121,38 @@
       </div>
     </div>
 
-    <div class="car-card">
-      <ng-container *ngIf="selectedDetailA?.image; else placeholderA">
-        <img [src]="selectedDetailA.image" alt="Auto A" (error)="onImageError($event)" />
+    <div #scoreScroll class="car-card">
+      <ng-container *ngIf="selectedDetailA && mostrarImagenA; else placeholderA">
+        <div class="image-wrapper">
+          <app-autenzy-loader 
+            [visible]="loadingImageA" 
+            [inline]="true"
+            class="spinner-overlay" />
+
+          <img 
+            [src]="selectedDetailA.image + '?t=' + cacheBusterA" 
+            (load)="onImageLoadA()" 
+            (error)="onImageError($event)" 
+            [class.hidden]="loadingImageA"
+          />
+        </div>
       </ng-container>
-      
+
       <ng-template #placeholderA>
-        <img src="/comparador1.webp" alt="Placeholder Auto A" class="placeholder-image" />
+        <div class="image-wrapper">
+          <app-autenzy-loader 
+            [visible]="loadingPlaceholderA" 
+            [inline]="true"
+            class="spinner-overlay" />
+
+          <img 
+            src="/car-comparison.webp" 
+            alt="Placeholder Auto A" 
+            class="placeholder-image" 
+            (load)="onPlaceholderLoadA()" 
+            [class.hidden]="loadingPlaceholderA"
+          />
+        </div>
       </ng-template>
       <h3>{{ selectedBrandA?.name }} {{ selectedModelA?.name }}</h3>
       <p class="origin" *ngIf="selectedDetailA?.origin">
@@ -118,12 +202,15 @@
           <img *ngIf="getResultadoComparacion('wheels') === 'B'" src="/x.webp" />
           <img *ngIf="getResultadoComparacion('wheels') === 'empate'" src="/igual.webp" />
         </p>
-        <p *ngIf="esCampoPrincipal('lenght') || isExpandedA">
-          <strong>Dimensiones:</strong> {{ selectedVersionA.lenght }} / {{ selectedVersionA.width }} / {{ selectedVersionA.height }} MM
-          <img *ngIf="getResultadoComparacion('lenght') === 'A'" src="/dicto.webp" />
-          <img *ngIf="getResultadoComparacion('lenght') === 'B'" src="/x.webp" />
-          <img *ngIf="getResultadoComparacion('lenght') === 'empate'" src="/igual.webp" />
+
+        <p *ngIf="esCampoPrincipal('lenght') || esCampoPrincipal('width') || esCampoPrincipal('height') || isExpandedA">
+          <strong>Dimensiones:</strong> {{ selectedVersionA.lenght }} / {{ selectedVersionA.width }} / {{ selectedVersionA.height }} mm
+
+          <img *ngIf="getGanadorDimensiones() === 'A'" src="/dicto.webp" />
+          <img *ngIf="getGanadorDimensiones() === 'B'" src="/x.webp" />
+          <img *ngIf="getGanadorDimensiones() === 'empate'" src="/igual.webp" />
         </p>
+
         <p *ngIf="esCampoPrincipal('consumption') || isExpandedA">
           <strong>Consumo:</strong> {{ selectedVersionA.consumption }} Km por litro
           <img *ngIf="getResultadoComparacion('consumption') === 'A'" src="/dicto.webp" />
@@ -137,7 +224,7 @@
           <img *ngIf="getResultadoComparacion('weight') === 'empate'" src="/igual.webp" />
         </p>
         <p *ngIf="esCampoPrincipal('displacement') || isExpandedA">
-          <strong>Cilindrada:</strong> {{ selectedVersionA.displacement }}
+          <strong>Cilindrada:</strong> {{ selectedVersionA.displacement | number:'1.1-1' }}
           <img *ngIf="getResultadoComparacion('displacement') === 'A'" src="/dicto.webp" />
           <img *ngIf="getResultadoComparacion('displacement') === 'B'" src="/x.webp" />
           <img *ngIf="getResultadoComparacion('displacement') === 'empate'" src="/igual.webp" />
@@ -203,6 +290,7 @@
           [filter]="true"
           filterPlaceholder="Marca"
           (onChange)="onBrandChangeB()"
+          [loading]="loadingBrandsB"
         >
   <ng-template let-item pTemplate="item">
     <div class="item-content">
@@ -239,12 +327,37 @@
     </div>
 
     <div class="car-card">
-      <ng-container *ngIf="selectedDetailB?.image; else placeholderB">
-        <img [src]="selectedDetailB.image" alt="Auto B" (error)="onImageError($event)" />
+      <ng-container *ngIf="selectedDetailB && mostrarImagenB; else placeholderB">
+        <div class="image-wrapper">
+          <app-autenzy-loader 
+            [visible]="loadingImageB" 
+            [inline]="true"
+            class="spinner-overlay" />
+
+          <img 
+            [src]="selectedDetailB.image + '?t=' + cacheBusterB" 
+            (load)="onImageLoadB()" 
+            (error)="onImageError($event)" 
+            [class.hidden]="loadingImageB"
+          />
+        </div>
       </ng-container>
-      
+
       <ng-template #placeholderB>
-        <img src="/comparador2.webp" alt="Placeholder Auto B" class="placeholder-image" />
+        <div class="image-wrapper">
+          <app-autenzy-loader 
+            [visible]="loadingPlaceholderB" 
+            [inline]="true"
+            class="spinner-overlay" />
+
+          <img 
+            src="/car-comparison.webp" 
+            alt="Placeholder Auto B" 
+            class="placeholder-image" 
+            (load)="onPlaceholderLoadB()" 
+            [class.hidden]="loadingPlaceholderB"
+          />
+        </div>
       </ng-template>
       <h3>{{ selectedBrandB?.name }} {{ selectedModelB?.name }}</h3>
       <p class="origin" *ngIf="selectedDetailB?.origin">
@@ -313,7 +426,7 @@
           <img *ngIf="getResultadoComparacion('weight') === 'empate'" src="/igual.webp" />
         </p>
         <p *ngIf="esCampoPrincipal('displacement') || isExpandedB">
-          <strong>Cilindrada:</strong> {{ selectedVersionB.displacement }}
+          <strong>Cilindrada:</strong> {{ selectedVersionB.displacement | number:'1.1-1' }}
           <img *ngIf="getResultadoComparacion('displacement') === 'B'" src="/dicto.webp" />
           <img *ngIf="getResultadoComparacion('displacement') === 'A'" src="/x.webp" />
           <img *ngIf="getResultadoComparacion('displacement') === 'empate'" src="/igual.webp" />
@@ -349,10 +462,10 @@
   </div>
 </div>
 
-<div class="vs-instruccion" *ngIf="!selectedVersionA || !selectedVersionB">
+<!-- <div class="vs-instruccion" *ngIf="!selectedVersionA || !selectedVersionB">
   <i class="pi pi-info-circle"></i>
   <p>Selecciona dos versiones para comparar características</p>
-</div>
+</div> -->
 
 <div *ngIf="categoriaSeleccionada && selectedVersionA && selectedVersionB" class="score-title-container">
   <h2 class="comparacion-title">Resultados de la Comparación</h2>
@@ -371,7 +484,7 @@
   </div>
 </div>
 
-<div *ngIf="categoriaSeleccionada && selectedVersionA && selectedVersionB" class="score-wrapper">
+<div *ngIf="categoriaSeleccionada && selectedVersionA && selectedVersionB" class="score-wrapper" >
   <div class="score-box">
     <div class="score-header">
       <h4>Campos ganados</h4>
@@ -404,10 +517,8 @@
   </div>
 </div>
 
-<div class="top-comparisons-section" *ngIf="topComparisons.length > 0">
-  <h2 class="top-title">
-    <i class="pi pi-star-fill"></i> Comparaciones más populares
-  </h2>
+<div class="top-comparisons-section" *ngIf="topComparisons && topComparisons.length > 0; else loadingSkeleton">
+  <h2 class="top-title">Comparaciones más populares</h2>
 
   <p-carousel
     [value]="topComparisons"
@@ -415,7 +526,7 @@
     [circular]="true"
     [autoplayInterval]="6000"
     [showIndicators]="true"
-    styleClass="top-carousel"
+    styleClass="top-carousel custom-carousel"
   >
     <ng-template let-comparison pTemplate="item">
       <div class="comparison-cards">
@@ -427,9 +538,9 @@
             <span class="badge green">Ganador</span>
             <span class="badge orange">{{ comparison.categoria }}</span>
           </div>
-          <img [src]="comparison.imageA" alt="Auto A" />
+          <img [src]="comparison.imageA" (load)="comparison.loadingA = false" alt="Auto A" />
           <h4>{{ comparison.brandA }} {{ comparison.modelA }}</h4>
-          <p>{{ comparison.yearStartA }}-{{ comparison.yearEndA }}</p>
+          <p>{{ comparison.yearStartA }} - {{ comparison.yearEndA }}</p>
           <small>{{ comparison.versionA }}</small>
         </div>
 
@@ -441,7 +552,7 @@
           </div>
           <img [src]="comparison.imageB" alt="Auto B" />
           <h4>{{ comparison.brandB }} {{ comparison.modelB }}</h4>
-          <p>{{ comparison.yearStartB }}-{{ comparison.yearEndB }}</p>
+          <p>{{ comparison.yearStartB }} - {{ comparison.yearEndB }}</p>
           <small>{{ comparison.versionB }}</small>
         </div>
       </div>
@@ -449,5 +560,11 @@
   </p-carousel>
 </div>
 
+<ng-template #loadingSkeleton>
+  <div class="comparison-cards skeleton-loader">
+    <div class="comparison-card skeleton-card"></div>
+    <div class="comparison-card skeleton-card"></div>
+  </div>
+</ng-template>
 <app-footer></app-footer>
 </div>

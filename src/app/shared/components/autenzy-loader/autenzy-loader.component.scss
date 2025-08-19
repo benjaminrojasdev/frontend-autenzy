@@ -1,13 +1,23 @@
 .autenzy-loader-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  //background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   animation: fadeIn 0.3s ease-out both;
+}
+
+.autenzy-loader-inline {
+  position: absolute;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
 }
 
 .autenzy-loader {
@@ -38,6 +48,21 @@
     transform: translate(-50%, -50%);
     z-index: 2;
   }
+}
+
+/* Ajustes para el loader embebido */
+.autenzy-loader-inline .autenzy-loader {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.autenzy-loader-inline .spinner-ring {
+  border-width: 3px;
+}
+
+.autenzy-loader-inline .autenzy-logo {
+  width: 1.2rem;
+  height: 1.2rem;
 }
 
 /* Animación suave de entrada */

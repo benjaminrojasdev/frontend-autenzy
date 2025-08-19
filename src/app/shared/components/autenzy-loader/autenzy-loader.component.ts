@@ -9,4 +9,5 @@ import { CommonModule } from '@angular/common';
 })
 export class AutenzyLoaderComponent {
   @Input() visible: boolean = false;
+  @Input() inline: boolean = false;
 }

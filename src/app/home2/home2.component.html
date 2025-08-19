@@ -1,0 +1,30 @@
+<app-header></app-header>
+<div class="landing-container">
+  <!-- Slogan -->
+<div class="slogan">
+  <span class="typewriter-text" [ngClass]="{'animated': true}" style="animation-delay: 0s;">Busca</span>
+  <span class="typewriter-text" [ngClass]="{'animated': true}" style="animation-delay: 1.2s;">Compara</span>
+  <span class="typewriter-text" [ngClass]="{'animated': true}" style="animation-delay: 2.4s;">Decide</span>
+</div>
+
+  <!-- Imagen de autos combinados -->
+  <div class="vehicles">
+    <img src="landing-car.webp" alt="Vehículos" />
+  </div>
+
+  <!-- Botones con frases -->
+<div class="button-group">
+  <div class="cta-block primary">
+    <p class="cta-text">¿Estás en busca de tu próximo auto?</p>
+    <a href="/modelos" class="btn btn-primary">Comenzar</a>
+  </div>
+
+  <div class="cta-block">
+    <p class="cta-text">¿Necesitas más detalles técnicos?</p>
+    <a href="/comparador" class="btn btn-secondary">Comparar</a>
+  </div>
+</div>
+</div>
+
+
+<app-footer></app-footer>
